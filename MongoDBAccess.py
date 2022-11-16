@@ -53,6 +53,39 @@ def hash_id(j):
     return hash(j)
 
 
-drop_collection("riddles", "k-riddles")
+def get_all_items(db, coll):
+    collection = get_collection(db, coll)
+    items = []
+    for i in collection.find():
+        items.append(i)
+    return items
 
-add_many_items("riddles", "k-riddles", read_csv("riddles.csv"))
+def get_item(db, coll, id):
+    collection = get_collection(db, coll)
+    all = collection.find({'_id': hash_id(id)})
+    items = []
+    for i in all:
+        items.append(i)
+    if (len(items) > 1):
+        return {"error": "multiple items with same id"}
+    elif (len(items) < 1):
+        return {"error": "no items with that id"}
+    else:
+        return items[0]
+
+def get_item_answer(db, coll, id):
+    collection = get_collection(db, coll)
+    all = collection.find({'_id': hash_id(id)})
+    items = []
+    for i in all:
+        items.append(i)
+    if (len(items) > 1):
+        return {"error": "multiple items with same id"}
+    elif (len(items) < 1):
+        return {"error": "no items with that id"}
+    else:
+        return items[0]['answer']
+
+#drop_collection("riddles", "kriddles")
+
+#add_many_items("riddles", "kriddles", read_csv("riddles.csv"))
