@@ -3,15 +3,14 @@ import unittest
 import numpy as np
 import pandas as pd
 import torch
-from ridley.document_embeddings import batch_riddle_candidates, score
+from ridley.document_embeddings import score
 from transformers import RealmEmbedder, RealmScorer, RealmTokenizer
 
 
 class TestDocumentEmbeddings(unittest.TestCase):
     def setUp(self):
-        self.num_candidates = 2
         self.scorer = RealmScorer.from_pretrained(
-            "google/realm-cc-news-pretrained-scorer", num_candidates=self.num_candidates
+            "google/realm-cc-news-pretrained-scorer", num_candidates=2
         )
         self.embedder = RealmEmbedder.from_pretrained(
             "google/realm-cc-news-pretrained-embedder"
@@ -25,8 +24,12 @@ class TestDocumentEmbeddings(unittest.TestCase):
             ["A cute cat.", "An adorable dog"],
         ]
 
-        self.input_file = "data/kaggle_riddles/riddles.csv"
-
+        riddles = pd.read_csv("data/kaggle_riddles/riddles.csv")
+        riddles_list = list(riddles.QUESTIONS + " Answer: " + riddles.ANSWERS)
+        if len(riddles_list) % 2 != 0:
+            riddles_list = riddles_list[:-1]
+        batched_riddles = np.array_split(riddles_list, len(riddles_list) // 2)
+        self.batched_riddles = [list(x) for x in batched_riddles]
         self.input_riddle = """
             Thirty white horses on a red hill, first they champ, then they stamp, then they 
             stand still
@@ -41,29 +44,14 @@ class TestDocumentEmbeddings(unittest.TestCase):
     def test_score(self):
         score(self.scorer, self.tokenizer, self.input_texts, self.candidate_texts)
 
+    def test_score_riddle(self):
+        score(self.scorer, self.tokenizer, self.input_riddle, self.batched_riddles)
+
     def test_typicality(self):
         pass
 
     def test_batch_riddle_candidates(self):
-        # 2 candidates
-        batch = batch_riddle_candidates(self.input_file, self.num_candidates)
-        self.assertIsInstance(batch, list)
-        self.assertIsInstance(batch[0], list)
-        self.assertIsInstance(batch[0][0], str)
-        [self.assertEqual(len(b), self.num_candidates) for b in batch]
-
-        # 8 candidates
-        num_candidates = 8
-        batch = batch_riddle_candidates(self.input_file, num_candidates)
-        self.assertIsInstance(batch, list)
-        self.assertIsInstance(batch[0], list)
-        self.assertIsInstance(batch[0][0], str)
-        [self.assertEqual(len(b), num_candidates) for b in batch]
-
-    def test_score_riddle(self):
-        batched_riddles = batch_riddle_candidates(self.input_file, self.num_candidates)
-        result = score(self.scorer, self.tokenizer, self.input_riddle, batched_riddles)
-        self.assertIsNotNone(result)
+        pass
 
 
 if __name__ == "__main__":
