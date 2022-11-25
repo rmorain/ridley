@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pudb
 import torch
 from transformers import RealmEmbedder, RealmScorer, RealmTokenizer
 
@@ -28,14 +29,20 @@ def embed(embedder, tokenizer, input_texts):
         **inputs,
         output_hidden_states=True,
     )
-    return result
+    return result.projected_score
 
 
-def typicality(scorer, embedder, tokenizer, input_texts, candidate_texts):
+def mean_cosine_similarity(scorer, tokenizer, input_texts, candidate_texts):
     results = score(scorer, tokenizer, input_texts, candidate_texts)
-    e = embed(embedder, tokenizer, input_texts)
-    doc_embeddings = results.candidate_scores
-    pass
+    relevance_scores = results.relevance_score
+    return relevance_scores.mean(1)  # Mean for each row of the columns
+
+
+def mean_euclidean_distance(scorer, tokenizer, input_texts, candidate_texts):
+    results = score(scorer, tokenizer, input_texts, candidate_texts)
+    input_embeddings = results.query_score
+    candidate_embeddings = results.candidate_score
+    return torch.norm(input_embeddings - candidate_embeddings, dim=-1).mean(1)
 
 
 def batch_riddle_candidates(input_file, num_candidates):

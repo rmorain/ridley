@@ -1,9 +1,9 @@
 import unittest
 
-import numpy as np
-import pandas as pd
 import torch
-from ridley.document_embeddings import batch_riddle_candidates, score
+from ridley.document_embeddings import (batch_riddle_candidates, embed,
+                                        mean_cosine_similarity,
+                                        mean_euclidean_distance, score)
 from transformers import RealmEmbedder, RealmScorer, RealmTokenizer
 
 
@@ -27,10 +27,10 @@ class TestDocumentEmbeddings(unittest.TestCase):
 
         self.input_file = "data/kaggle_riddles/riddles.csv"
 
-        self.input_riddle = """
-            Thirty white horses on a red hill, first they champ, then they stamp, then they 
-            stand still
-            """
+        self.input_riddle = (
+            "Thirty white horses on a red hill, first they champ, then they "
+            "stamp, then they stand still"
+        )
 
     def test_tokenize(self):
         result = self.tokenizer(
@@ -38,11 +38,29 @@ class TestDocumentEmbeddings(unittest.TestCase):
         )
         self.assertIsNotNone(result)
 
-    def test_score(self):
-        score(self.scorer, self.tokenizer, self.input_texts, self.candidate_texts)
+    def test_embed(self):
+        e = embed(self.embedder, self.tokenizer, self.input_texts)
+        self.assertIsNotNone(e)
 
-    def test_typicality(self):
-        pass
+    def test_score(self):
+        result = score(
+            self.scorer, self.tokenizer, self.input_texts, self.candidate_texts
+        )
+        self.assertIsNotNone(result)
+
+    def test_mean_cosine_similarity(self):
+        result = mean_cosine_similarity(
+            self.scorer, self.tokenizer, self.input_texts, self.candidate_texts
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(len(self.input_texts), len(result))
+
+    def test_mean_euclidean_distance(self):
+        result = mean_euclidean_distance(
+            self.scorer, self.tokenizer, self.input_texts, self.candidate_texts
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(len(self.input_texts), len(result))
 
     def test_batch_riddle_candidates(self):
         # 2 candidates
