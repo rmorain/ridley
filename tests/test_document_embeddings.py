@@ -3,6 +3,7 @@ import unittest
 import pudb
 import torch
 from ridley.document_embeddings import (batch_riddle_candidates, embed,
+                                        evaluate_riddle,
                                         mean_cosine_similarity,
                                         mean_euclidean_distance, score)
 from transformers import RealmEmbedder, RealmScorer, RealmTokenizer
@@ -93,6 +94,18 @@ class TestDocumentEmbeddings(unittest.TestCase):
         batched_riddles = batched_riddles[:10]
         result = score(self.scorer, self.tokenizer, self.input_riddle, batched_riddles)
         self.assertIsNotNone(result)
+
+    def test_evaluate_riddle(self):
+        result = evaluate_riddle(
+            self.scorer,
+            self.tokenizer,
+            self.input_riddle,
+            self.input_file,
+            self.num_candidates,
+        )
+        self.assertIsNotNone(result)
+        for key, value in result.items():
+            self.assertIsInstance(value, float)
 
 
 if __name__ == "__main__":
