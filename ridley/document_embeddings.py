@@ -35,14 +35,14 @@ def embed(embedder, tokenizer, input_texts):
 def mean_cosine_similarity(scorer, tokenizer, input_texts, candidate_texts):
     results = score(scorer, tokenizer, input_texts, candidate_texts)
     relevance_scores = results.relevance_score
-    return relevance_scores.mean(1)  # Mean for each row of the columns
+    return relevance_scores.mean()
 
 
 def mean_euclidean_distance(scorer, tokenizer, input_texts, candidate_texts):
     results = score(scorer, tokenizer, input_texts, candidate_texts)
     input_embeddings = results.query_score
     candidate_embeddings = results.candidate_score
-    return torch.norm(input_embeddings - candidate_embeddings, dim=-1).mean(1)
+    return torch.norm(input_embeddings - candidate_embeddings, dim=-1).mean()
 
 
 def batch_riddle_candidates(input_file, num_candidates):

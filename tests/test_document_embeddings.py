@@ -1,5 +1,6 @@
 import unittest
 
+import pudb
 import torch
 from ridley.document_embeddings import (batch_riddle_candidates, embed,
                                         mean_cosine_similarity,
@@ -27,10 +28,12 @@ class TestDocumentEmbeddings(unittest.TestCase):
 
         self.input_file = "data/kaggle_riddles/riddles.csv"
 
-        self.input_riddle = (
-            "Thirty white horses on a red hill, first they champ, then they "
-            "stamp, then they stand still"
-        )
+        self.input_riddle = [
+            (
+                "Thirty white horses on a red hill, first they champ, then they "
+                "stamp, then they stand still"
+            )
+        ]
 
     def test_tokenize(self):
         result = self.tokenizer(
@@ -53,18 +56,24 @@ class TestDocumentEmbeddings(unittest.TestCase):
             self.scorer, self.tokenizer, self.input_texts, self.candidate_texts
         )
         self.assertIsNotNone(result)
-        self.assertEqual(len(self.input_texts), len(result))
+        # Test riddle
+        batch = batch_riddle_candidates(self.input_file, self.num_candidates)
+        batch = batch[:10]
+        result = mean_cosine_similarity(
+            self.scorer, self.tokenizer, self.input_riddle, batch
+        )
+        self.assertIsNotNone(result)
 
     def test_mean_euclidean_distance(self):
         result = mean_euclidean_distance(
             self.scorer, self.tokenizer, self.input_texts, self.candidate_texts
         )
         self.assertIsNotNone(result)
-        self.assertEqual(len(self.input_texts), len(result))
 
     def test_batch_riddle_candidates(self):
         # 2 candidates
         batch = batch_riddle_candidates(self.input_file, self.num_candidates)
+        batch = batch[:10]
         self.assertIsInstance(batch, list)
         self.assertIsInstance(batch[0], list)
         self.assertIsInstance(batch[0][0], str)
@@ -73,6 +82,7 @@ class TestDocumentEmbeddings(unittest.TestCase):
         # 8 candidates
         num_candidates = 8
         batch = batch_riddle_candidates(self.input_file, num_candidates)
+        batch = batch[:10]
         self.assertIsInstance(batch, list)
         self.assertIsInstance(batch[0], list)
         self.assertIsInstance(batch[0][0], str)
@@ -80,6 +90,7 @@ class TestDocumentEmbeddings(unittest.TestCase):
 
     def test_score_riddle(self):
         batched_riddles = batch_riddle_candidates(self.input_file, self.num_candidates)
+        batched_riddles = batched_riddles[:10]
         result = score(self.scorer, self.tokenizer, self.input_riddle, batched_riddles)
         self.assertIsNotNone(result)
 
