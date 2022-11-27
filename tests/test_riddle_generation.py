@@ -2,15 +2,27 @@ import unittest
 
 import pudb
 import torch
-from ridley.riddle_generation import j1_jumbo
+from ridley.riddle_generation import generate
 
 
-class TestDocumentEmbeddings(unittest.TestCase):
+class TestRiddleGeneration(unittest.TestCase):
     def setUp(self):
-        pass
+        self.prompt = "Here is a riddle that I really like: "
+        self.num_results = 1
+        self.seed = 42
+        self.max_length = 30
 
-    def j1_jumbo(self):
-        pass
+    def test_gpt2(self):
+        result = generate(
+            prompt=self.prompt,
+            num_return_sequences=self.num_results,
+            seed=self.seed,
+            max_length=self.max_length,
+        )
+        pu.db
+        self.assertIsInstance(result, list)
+        for item in result:
+            self.assertIsInstance(item, str)
 
 
 if __name__ == "__main__":
