@@ -1,8 +1,12 @@
 from pprint import pprint
+from time import time
 
 import numpy as np
 import pudb
-from transformers import GPT2Tokenizer, PhrasalConstraint, pipeline, set_seed
+from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
+                          RealmTokenizer, pipeline, set_seed)
+
+from ridley.document_embeddings import score_riddle
 
 
 def generate(
@@ -37,15 +41,61 @@ def generate(
     return seqs
 
 
-if __name__ == "__main__":
-    prompt = (
-        "Riddle 1\n\n"
-        "Thirty white horses on a red hill, first they champ, then they "
-        "stamp, then they stand still"
-        "\n\nRiddle 2:"
+def generate_until_done():
+    done = False
+    start = time()
+    bssf = (None, float("-inf"), 0)
+    scorer = RealmScorer.from_pretrained(
+        "google/realm-cc-news-pretrained-scorer", num_candidates=2
     )
-    # prompt = "Riddle me this! Riddle me that!"
-    # constraints = ["What am I?", " dog "]
+    eval_tokenizer = RealmTokenizer.from_pretrained(
+        "google/realm-cc-news-pretrained-embedder"
+    )
+    candidate_file1 = "data/kaggle_riddles/riddles.csv"
+    candidate_file2 = "data/jeopardy.csv"
+    num_candidates = 2
+    prompt = "Here is a riddle I really enjoy: "
+    num_return_sequences = 5
+    seed = None
+    max_length = 100
     constraints = None
-    result = generate(prompt=prompt, constraints=constraints, do_sample=True)
-    pprint(result)
+    gen_tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    gen_tokenizer.padding_token = gen_tokenizer.eos_token
+    do_sample = True
+    threshold = 0.5
+    lamda = 0.9
+    time_limit = 60
+    # metric = "cosine similarity"
+    metric = "euclidean distance"
+    while not done or (start - time() > time_limit):
+        riddles = generate(
+            prompt,
+            num_return_sequences,
+            seed,
+            max_length,
+            constraints,
+            gen_tokenizer,
+            do_sample,
+        )
+        for r in riddles:
+            result = score_riddle(
+                scorer,
+                eval_tokenizer,
+                r,
+                candidate_file1,
+                candidate_file2,
+                num_candidates,
+                lamda,
+                metric,
+            )
+            if result > bssf[1]:
+                bssf = (r, result, bssf[2] + 1)
+        if bssf[1] <= threshold:
+            return bssf
+
+    return bssf
+
+
+if __name__ == "__main__":
+    result = generate_until_done()
+    print(result)
