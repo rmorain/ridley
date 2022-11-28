@@ -19,7 +19,6 @@ class TestRiddleGeneration(unittest.TestCase):
             seed=self.seed,
             max_length=self.max_length,
         )
-        pu.db
         self.assertIsInstance(result, list)
         for item in result:
             self.assertIsInstance(item, str)
