@@ -1,7 +1,5 @@
 import unittest
 
-import pudb
-import torch
 from ridley.document_embeddings import (batch_riddle_candidates, embed,
                                         mean_cosine_similarity,
                                         mean_euclidean_distance, score)
