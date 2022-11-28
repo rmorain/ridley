@@ -35,18 +35,18 @@ def embed(embedder, tokenizer, input_texts):
 def mean_cosine_similarity(scorer, tokenizer, input_texts, candidate_texts):
     results = score(scorer, tokenizer, input_texts, candidate_texts)
     relevance_scores = results.relevance_score
-    return relevance_scores.mean()
+    return 1 - relevance_scores.mean().item()  # 1 - to minimize
 
 
 def mean_euclidean_distance(scorer, tokenizer, input_texts, candidate_texts):
     results = score(scorer, tokenizer, input_texts, candidate_texts)
     input_embeddings = results.query_score
     candidate_embeddings = results.candidate_score
-    return torch.norm(input_embeddings - candidate_embeddings, dim=-1).mean()
+    return torch.norm(input_embeddings - candidate_embeddings, dim=-1).mean().item()
 
 
 def batch_riddle_candidates(input_file, num_candidates):
-    riddles = pd.read_csv(input_file)
+    riddles = pd.read_csv(input_file)[:300]  # Max 300 rows
     riddles_list = list(riddles.QUESTIONS + " Answer: " + riddles.ANSWERS)
     # Must all be same length
     while len(riddles_list) % num_candidates != 0:
@@ -54,6 +54,42 @@ def batch_riddle_candidates(input_file, num_candidates):
     batched_riddles = np.array_split(riddles_list, len(riddles_list) // num_candidates)
     batched_riddles = [list(x) for x in batched_riddles]
     return batched_riddles
+
+
+def evaluate_riddle(scorer, tokenizer, input_riddle, candidate_file, num_candidates):
+    batched_riddles = batch_riddle_candidates(candidate_file, num_candidates)
+    batched_riddles = batched_riddles[:10]
+
+    cosine_similarity = mean_cosine_similarity(
+        scorer, tokenizer, input_riddle, batched_riddles
+    )
+
+    euclidean_distance = mean_euclidean_distance(
+        scorer, tokenizer, input_riddle, batched_riddles
+    )
+    return {
+        "cosine similarity": cosine_similarity,
+        "euclidean distance": euclidean_distance,
+    }
+
+
+def score_riddle(
+    scorer,
+    tokenizer,
+    input_riddle,
+    candidate_file1,
+    candidate_file2,
+    num_candidates,
+    lamda,
+    metric,
+):
+    typicality = evaluate_riddle(
+        scorer, tokenizer, input_riddle, candidate_file1, num_candidates
+    )
+    novelty = evaluate_riddle(
+        scorer, tokenizer, input_riddle, candidate_file2, num_candidates
+    )
+    return (-1 * lamda * typicality[metric]) + (lamda - 1) * novelty[metric]
 
 
 if __name__ == "__main__":
