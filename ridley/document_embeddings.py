@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pudb
 import torch
 from transformers import RealmEmbedder, RealmScorer, RealmTokenizer
 
@@ -104,13 +103,13 @@ if __name__ == "__main__":
     # input_texts = ["How are you?", "What is the item in the picture?"]
     input_texts = [
         """
-        San Jose, officially San José, is a major city in the U.S. state of California 
-        that is the cultural, financial, and political center of Silicon Valley and 
+        San Jose, officially San José, is a major city in the U.S. state of California
+        that is the cultural, financial, and political center of Silicon Valley and
         largest city in Northern California by both population and area.
         """,
         """
-        The theory of relativity usually encompasses two interrelated theories by 
-        Albert Einstein: special relativity and general relativity, proposed and 
+        The theory of relativity usually encompasses two interrelated theories by
+        Albert Einstein: special relativity and general relativity, proposed and
         published in 1905 and 1915, respectively.
         """,
     ]
@@ -131,7 +130,7 @@ if __name__ == "__main__":
 
     riddles = pd.read_csv("data/kaggle_riddles/riddles.csv")
     input_riddle = """
-        Thirty white horses on a red hill, first they champ, then they stamp, then they 
+        Thirty white horses on a red hill, first they champ, then they stamp, then they
         stand still
         """
-    riddles_result = score(scorer, tokenizer, input_riddle, batched_riddles)
+    riddles_result = score(scorer, tokenizer, input_riddle, candidate_texts)
