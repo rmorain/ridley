@@ -1,8 +1,6 @@
-from pprint import pprint
 from time import time
 
 import numpy as np
-import pudb
 from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
@@ -17,6 +15,7 @@ def generate(
     constraints=None,
     tokenizer=GPT2Tokenizer.from_pretrained("gpt2"),
     do_sample=False,
+    logits_processor=None,
 ):
     if not seed:
         seed = np.random.randint(100000)
@@ -36,6 +35,7 @@ def generate(
         do_sample=do_sample,
         constraints=constraints,
         repetition_penalty=10.1,
+        logits_processor=logits_processor,
     )
     seqs = [r["generated_text"] for r in result]
     return seqs
