@@ -1,5 +1,6 @@
 import csv
 
+import torch
 import pymongo
 
 
@@ -37,7 +38,6 @@ def add_many_items(db, name, items):
     collection.insert_many(items)
     return
 
-
 def read_csv(pathname):
     with open(pathname) as csvfile:
         csvReader = csv.reader(csvfile, delimiter=",")
@@ -53,8 +53,15 @@ def read_csv(pathname):
         return objects
 
 
-def hash_id(j):
-    return hash(j)
+def hash_id(e):
+    data = e.tolist()
+    score = 1
+    for i in data:
+        for j in i:
+            score += j
+    score = score * len(data[0])
+    score = score * 10000
+    return score
 
 
 def get_all_items(db, coll):
