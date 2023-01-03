@@ -25,3 +25,4 @@ class TestRhymeLogitsProcessor(unittest.TestCase):
         scores = torch.rand(self.tokenizer.vocab_size)
         result = self.rhyme_lp.rhyming_prior(input_ids, scores)
         self.assertIsNotNone(result)
+        self.assertEqual(self.tokenizer.vocab_size, len(result))
