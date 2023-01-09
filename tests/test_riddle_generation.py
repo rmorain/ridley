@@ -1,7 +1,5 @@
 import unittest
 
-import pudb
-import torch
 from ridley.riddle_generation import generate
 
 

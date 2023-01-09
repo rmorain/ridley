@@ -15,7 +15,8 @@ def generate(
     constraints=None,
     tokenizer=GPT2Tokenizer.from_pretrained("gpt2"),
     do_sample=False,
-    logits_processor=None,
+    logits_processor=[],
+    num_beams=5,
 ):
     if not seed:
         seed = np.random.randint(100000)
@@ -30,7 +31,7 @@ def generate(
         prompt,
         max_new_tokens=max_length,
         num_return_sequences=num_return_sequences,
-        num_beams=5,
+        num_beams=num_beams,
         temperature=0.9,
         do_sample=do_sample,
         constraints=constraints,
