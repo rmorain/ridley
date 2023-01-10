@@ -1,6 +1,15 @@
 # ridley
 Knowledge integration demonstrated using riddle generation
 
+### Environment
+
+Create the conda environment from `environment.yml`
+```
+conda env create -f environment.yml
+```
+
+
+
 ### Testing
 Before merging, run the following to pass all tests:
 ```python -m unittest```
