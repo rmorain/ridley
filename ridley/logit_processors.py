@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 import requests
 import torch
@@ -17,13 +15,11 @@ class RhymeLogitsProcessor(LogitsProcessor):
         self.prompt_len = None
 
     def __call__(self, input_ids, scores):
-        if not self.prompt_len:
-            self.prompt_len = len(input_ids[0])
-
         scores.squeeze_()
         if not self.rhyming_word_tokens or self.rhyming_word_index > (
             len(self.rhyming_word_tokens) - 1
         ):
+            self.prompt_len = len(input_ids[0])
             prior, rhyming_tokens = self.rhyming_prior(input_ids, scores)
             self.rhyming_scores = scores * prior
             self.rhyming_word_tokens = self.select_rhyming_word(rhyming_tokens, scores)

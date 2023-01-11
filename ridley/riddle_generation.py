@@ -5,6 +5,7 @@ from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
+from ridley.logit_processors import RhymeLogitsProcessor
 
 
 def generate(
@@ -95,6 +96,28 @@ def generate_until_done():
             return bssf
 
     return bssf
+
+
+def generate_rhyming_lines(prompt, num_lines=5, max_length=5, do_sample=False):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    rhyme_lp = RhymeLogitsProcessor(tokenizer, max_length)
+    lines = prompt + "\n "
+    prev_len = len(prompt.split())
+    for i in range(num_lines):
+        result = generate(
+            lines,
+            num_return_sequences=1,
+            max_length=max_length,
+            do_sample=do_sample,
+            logits_processor=[rhyme_lp],
+            num_beams=1,
+        )[0]
+        line = " ".join(result.split()[prev_len:])
+        prev_len = len(result.split())
+        lines += line + "\n "
+
+    print(lines)
+    return lines
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import unittest
 
-from ridley.riddle_generation import generate
+from ridley.riddle_generation import generate, generate_rhyming_lines
 
 
 class TestRiddleGeneration(unittest.TestCase):
@@ -20,6 +20,10 @@ class TestRiddleGeneration(unittest.TestCase):
         self.assertIsInstance(result, list)
         for item in result:
             self.assertIsInstance(item, str)
+
+    def test_generate_rhyming_lines(self):
+        result = generate_rhyming_lines("Have you heard about the man from Peru?")
+        self.assertIsNotNone(result)
 
 
 if __name__ == "__main__":
