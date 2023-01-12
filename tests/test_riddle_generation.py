@@ -23,6 +23,7 @@ class TestRiddleGeneration(unittest.TestCase):
 
     def test_generate_rhyming_lines(self):
         result = generate_rhyming_lines("Have you heard about the man from Peru?")
+        __import__("pudb").set_trace()
         self.assertIsNotNone(result)
 
 

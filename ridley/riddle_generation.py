@@ -116,7 +116,6 @@ def generate_rhyming_lines(prompt, num_lines=5, max_length=5, do_sample=False):
         prev_len = len(result.split())
         lines += line + "\n "
 
-    print(lines)
     return lines
 
 
