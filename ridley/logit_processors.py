@@ -49,7 +49,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
         # Add space before word to correctly tokenize.
         rhyming_words = [" " + x["word"] for x in response.json()]
         if len(rhyming_words) > 0:
-            rhyming_tokens = self.tokenizer(rhyming_words).input_ids
+            rhyming_tokens = self.tokenizer.encode(rhyming_words).input_ids
             flat_list = [item for sublist in rhyming_tokens for item in sublist]
             mask = torch.zeros(self.tokenizer.vocab_size)
             # Set rhyming tokens to 1
@@ -66,3 +66,35 @@ class RhymeLogitsProcessor(LogitsProcessor):
             word_scores.append(avg_word_score)
         best_rhyming_word = rhyming_tokens[np.argmax(word_scores)]
         return best_rhyming_word
+
+
+class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
+    def __init__(self, tokenizer, max_length):
+        super().__init__(tokenizer, max_length)
+
+    def __call__(self, input_ids, scores):
+        __import__("pudb").set_trace()
+        if not self.rhyming_word_tokens:
+            forward_ids = [input_ids[0].tolist()[::-1]]
+            prior, rhyming_tokens = self.rhyming_prior(forward_ids, scores)
+            pass
+        return scores
+
+    def rhyming_prior(self, input_ids, scores):
+        # Decode input_ids
+        text = self.tokenizer.decode(input_ids[0])
+        word = text.split()[-1]
+        # Get rhyming word
+        response = self.request_rhymes(word)
+        # Add space before word to correctly tokenize.
+        rhyming_words = [" " + x["word"] for x in response.json()]
+        if len(rhyming_words) > 0:
+            rhyming_tokens = [self.tokenizer.encode(word) for word in rhyming_words]
+            flat_list = [item for sublist in rhyming_tokens for item in sublist]
+            mask = torch.zeros(self.tokenizer.vocab_size)
+            # Set rhyming tokens to 1
+            mask[torch.tensor(flat_list)] = 1
+        # If nothing rhymes
+        else:
+            mask = torch.ones(self.tokenizer.vocab_size)
+        return mask, rhyming_tokens

@@ -1,6 +1,9 @@
 from time import time
 
 import numpy as np
+import torch
+from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
+from GPT2ForwardBackward.padded_encoder import Encoder
 from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
@@ -117,6 +120,33 @@ def generate_rhyming_lines(prompt, num_lines=5, max_length=5, do_sample=False):
         lines += line + "\n "
 
     return lines
+
+
+def generate_rhyming_lines_backward(prompt, num_lines=5, max_length=5, do_sample=False):
+    pass
+
+
+def generate_backward(
+    input_text="Hello World!",
+    num_return_sequences=1,
+    max_length=20,
+    num_beams=1,
+    logits_processor=[],
+):
+    path_to_backward = "models/opengpt2_pytorch_backward"
+    model_backward = OpenGPT2LMHeadModel.from_pretrained(path_to_backward)
+    tokenizer = Encoder()
+    input_tokens = tokenizer.encode(input_text)[::-1]  # Reverse
+
+    output = model_backward.generate(
+        torch.tensor([input_tokens]),
+        num_return_sequences=num_return_sequences,
+        max_length=max_length,
+        logits_processor=logits_processor,
+    )
+    output_tokens = output.tolist()[0][::-1]
+    output_text = tokenizer.decode(output_tokens)
+    return output_text
 
 
 if __name__ == "__main__":
