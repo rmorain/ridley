@@ -13,6 +13,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
         self.rhyming_scores = None
         self.sequence_length = -1
         self.prompt_len = None
+        self.call_counter = 0
 
     def __call__(self, input_ids, scores):
         scores.squeeze_()
@@ -69,10 +70,11 @@ class RhymeLogitsProcessor(LogitsProcessor):
 
 
 class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
-    def __init__(self, tokenizer, max_length):
-        super().__init__(tokenizer, max_length)
+    def __init__(self, tokenizer, max_new_tokens):
+        super().__init__(tokenizer, max_new_tokens)
 
     def __call__(self, input_ids, scores):
+        self.call_counter += 1
         scores.squeeze_()
         if not self.rhyming_word_tokens:
             forward_ids = [input_ids[0].tolist()[::-1]]
@@ -85,6 +87,10 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
             new_scores[self.rhyming_word_tokens[self.rhyming_word_index]] = 1
             self.rhyming_word_index += 1
             return new_scores.unsqueeze_(0)
+        if self.call_counter >= self.max_length:
+            # Reinitialize for next line
+            super().__init__(self.tokenizer, self.max_length)
+
         return scores.unsqueeze_(0)
 
     def rhyming_prior(self, input_ids, scores):
