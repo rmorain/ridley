@@ -1,12 +1,15 @@
-from pprint import pprint
 from time import time
 
 import numpy as np
-import pudb
+import torch
+from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
+from GPT2ForwardBackward.padded_encoder import Encoder
 from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
+from ridley.logit_processors import (BackwardsRhymeLogitsProcessor,
+                                     RhymeLogitsProcessor)
 
 
 def generate(
@@ -17,6 +20,8 @@ def generate(
     constraints=None,
     tokenizer=GPT2Tokenizer.from_pretrained("gpt2"),
     do_sample=False,
+    logits_processor=[],
+    num_beams=5,
 ):
     if not seed:
         seed = np.random.randint(100000)
@@ -31,11 +36,12 @@ def generate(
         prompt,
         max_new_tokens=max_length,
         num_return_sequences=num_return_sequences,
-        num_beams=5,
+        num_beams=num_beams,
         temperature=0.9,
         do_sample=do_sample,
         constraints=constraints,
         repetition_penalty=10.1,
+        logits_processor=logits_processor,
     )
     seqs = [r["generated_text"] for r in result]
     return seqs
@@ -94,6 +100,75 @@ def generate_until_done():
             return bssf
 
     return bssf
+
+
+def generate_rhyming_lines(prompt, num_lines=5, max_length=5, do_sample=False):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    rhyme_lp = RhymeLogitsProcessor(tokenizer, max_length)
+    lines = prompt + "\n "
+    prev_len = len(prompt.split())
+    for i in range(num_lines):
+        result = generate(
+            lines,
+            num_return_sequences=1,
+            max_length=max_length,
+            do_sample=do_sample,
+            logits_processor=[rhyme_lp],
+            num_beams=1,
+        )[0]
+        line = " ".join(result.split()[prev_len:])
+        prev_len = len(result.split())
+        lines += line + "\n "
+
+    return lines
+
+
+def generate_rhyming_lines_backward(
+    prompt, num_lines=5, max_new_tokens=5, do_sample=False
+):
+    tokenizer = Encoder()
+    rhyme_lp = BackwardsRhymeLogitsProcessor(tokenizer, max_new_tokens)
+    lines = "\n" + prompt
+    prev_len = len(prompt.split())
+    for i in range(num_lines):
+        result = generate_backward(
+            lines,
+            num_return_sequences=1,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            logits_processor=[rhyme_lp],
+            num_beams=1,
+        )
+        line = " ".join(result.split()[: len(result.split()) - prev_len])
+        prev_len = len(result.split())
+        lines = "\n" + line + lines
+
+    return lines
+
+
+def generate_backward(
+    input_text="Hello World!",
+    num_return_sequences=1,
+    max_new_tokens=20,
+    num_beams=1,
+    logits_processor=[],
+    do_sample=False,
+):
+    path_to_backward = "models/opengpt2_pytorch_backward"
+    model_backward = OpenGPT2LMHeadModel.from_pretrained(path_to_backward)
+    tokenizer = Encoder()
+    input_tokens = tokenizer.encode(input_text)[::-1]  # Reverse
+
+    output = model_backward.generate(
+        torch.tensor([input_tokens]),
+        num_return_sequences=num_return_sequences,
+        max_new_tokens=max_new_tokens,
+        logits_processor=logits_processor,
+        do_sample=False,
+    )
+    output_tokens = output.tolist()[0][::-1]
+    output_text = tokenizer.decode(output_tokens)
+    return output_text
 
 
 if __name__ == "__main__":
