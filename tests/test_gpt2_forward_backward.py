@@ -29,3 +29,9 @@ class TestGPT2ForwardBackward(unittest.TestCase):
             output_tokens = output.tolist()[0][::-1]
             result = self.encoder.decode(output_tokens)
             self.assertEqual(result, correct_output)
+
+    def test_tokenize_decode(self):
+        input_text = "Hello world"
+        tokens = self.encoder(input_text, return_tensors="pt")
+        decode_text = self.encoder.decode(tokens.input_ids[0])
+        self.assertEqual(input_text, decode_text)

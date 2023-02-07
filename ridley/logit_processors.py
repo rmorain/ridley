@@ -1,11 +1,12 @@
 import numpy as np
 import requests
 import torch
+import torch.nn.functional as F
 from transformers import LogitsProcessor
 
 
 class RhymeLogitsProcessor(LogitsProcessor):
-    def __init__(self, tokenizer, max_length):
+    def __init__(self, tokenizer, max_length, do_sample=False):
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.rhyming_word_tokens = None
@@ -14,6 +15,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
         self.sequence_length = -1
         self.prompt_len = None
         self.call_counter = 0
+        self.do_sample = do_sample
 
     def __call__(self, input_ids, scores):
         scores.squeeze_()
@@ -65,13 +67,20 @@ class RhymeLogitsProcessor(LogitsProcessor):
         for word in rhyming_tokens:
             avg_word_score = scores[word].mean().item()
             word_scores.append(avg_word_score)
-        best_rhyming_word = rhyming_tokens[np.argmax(word_scores)]
+        if self.do_sample:
+            word_scores = torch.Tensor(word_scores)
+            probabilities = F.softmax(word_scores)
+            best_rhyming_word = rhyming_tokens[
+                torch.multinomial(probabilities, num_samples=1)
+            ]
+        else:
+            best_rhyming_word = rhyming_tokens[np.argmax(word_scores)]
         return best_rhyming_word
 
 
 class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
-    def __init__(self, tokenizer, max_new_tokens):
-        super().__init__(tokenizer, max_new_tokens)
+    def __init__(self, tokenizer, max_new_tokens, do_sample=False):
+        super().__init__(tokenizer, max_new_tokens, do_sample=do_sample)
 
     def __call__(self, input_ids, scores):
         self.call_counter += 1
