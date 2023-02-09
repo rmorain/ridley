@@ -7,8 +7,6 @@ from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
-from ridley.logit_processors import (BackwardsRhymeLogitsProcessor,
-                                     RhymeLogitsProcessor)
 from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
@@ -23,6 +21,7 @@ def generate(
     synced_gpus=False,
     seed=None,
     backward=False,
+    return_full_text=True,
 ):
     if not seed:
         seed = np.random.randint(100000)
@@ -46,9 +45,49 @@ def generate(
         stopping_criteria=stopping_criteria,
         prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
         synced_gpus=synced_gpus,
+        return_full_text=return_full_text,
     )
     seqs = [r["generated_text"] for r in result]
     return seqs
+
+
+def generate_lines(
+    inputs,
+    num_lines=5,
+    model=None,
+    tokenizer=None,
+    generation_config=GenerationConfig(pad_token_id=50256, eos_token_id=50256),
+    logits_processor=[],
+    stopping_criteria=[],
+    prefix_allowed_tokens_fn=None,
+    synced_gpus=False,
+    seed=None,
+    backward=False,
+):
+    if not seed:
+        seed = np.random.randint(100000)
+    lines = inputs
+    for i in range(num_lines):
+        result = (
+            generate(
+                lines,
+                model=model,
+                tokenizer=tokenizer,
+                generation_config=generation_config,
+                logits_processor=logits_processor,
+                seed=seed,
+                return_full_text=False,
+                backward=backward,
+            )[0]
+            .strip()
+            .replace("\n", " ")
+        )
+        if backward:
+            lines = result + "\n" + lines
+        else:
+            lines = lines + "\n" + result
+
+    return lines
 
 
 def generate_until_done():
@@ -104,52 +143,6 @@ def generate_until_done():
             return bssf
 
     return bssf
-
-
-def generate_rhyming_lines(prompt, num_lines=5, max_length=5, do_sample=False):
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    rhyme_lp = RhymeLogitsProcessor(tokenizer, max_length, do_sample=do_sample)
-    lines = prompt + "\n "
-    prev_len = len(prompt.split())
-    for i in range(num_lines):
-        result = generate(
-            lines,
-            num_return_sequences=1,
-            max_length=max_length,
-            do_sample=do_sample,
-            logits_processor=[rhyme_lp],
-            num_beams=1,
-        )[0]
-        line = " ".join(result.split()[prev_len:])
-        prev_len = len(result.split())
-        lines += line + "\n "
-
-    return lines
-
-
-def generate_rhyming_lines_backward(
-    prompt, num_lines=5, max_new_tokens=5, do_sample=False
-):
-    tokenizer = Encoder()
-    rhyme_lp = BackwardsRhymeLogitsProcessor(
-        tokenizer, max_new_tokens, do_sample=do_sample
-    )
-    lines = "\n" + prompt
-    prev_len = len(prompt.split())
-    for i in range(num_lines):
-        result = generate_backward(
-            lines,
-            num_return_sequences=1,
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            logits_processor=[rhyme_lp],
-            num_beams=1,
-        )
-        line = " ".join(result.split()[: len(result.split()) - prev_len])
-        prev_len = len(result.split())
-        lines = "\n" + line + lines
-
-    return lines
 
 
 if __name__ == "__main__":

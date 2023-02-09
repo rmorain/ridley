@@ -31,7 +31,6 @@ class TestBackwardRhymeLogitsProcessor(unittest.TestCase):
                 seed=self.seed,
                 backward=True,
             )
-            print(result)
             self.assertEqual(result, correct_output)
 
 

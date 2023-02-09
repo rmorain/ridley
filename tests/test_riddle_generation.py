@@ -1,8 +1,8 @@
-import pickle
 import unittest
 
-from ridley.riddle_generation import (generate, generate_rhyming_lines,
-                                      generate_rhyming_lines_backward)
+from GPT2ForwardBackward.padded_encoder import Encoder
+from ridley.logit_processors import BackwardsRhymeLogitsProcessor
+from ridley.riddle_generation import generate, generate_lines
 from transformers import GenerationConfig
 
 
@@ -17,6 +17,9 @@ class TestRiddleGeneration(unittest.TestCase):
             eos_token_id=50256,
             bos_token_id=50256,
             do_sample=True,
+        )
+        self.rhyme_lp = BackwardsRhymeLogitsProcessor(
+            Encoder(), self.generation_config.max_new_tokens, do_sample=True
         )
 
     def test_generate(self):
@@ -45,17 +48,25 @@ class TestRiddleGeneration(unittest.TestCase):
         for item in result:
             self.assertIsInstance(item, str)
 
-    def test_generate_rhyming_lines(self):
-        result = generate_rhyming_lines("Have you heard about the man from Peru?")
+    def test_generate_lines(self):
+        result = generate_lines(
+            "Have you heard about the man from Peru?",
+            seed=self.seed,
+            generation_config=self.generation_config,
+            num_lines=3,
+        )
         self.assertIsNotNone(result)
 
-    def test_generate_rhyming_lines_backward(self):
-        with open("tests/data/generate_rhyming_lines_backward.pkl", "rb") as f:
-            correct_output = pickle.load(f)
-            result = generate_rhyming_lines_backward(
-                "Have you heard about the man from Peru"
-            )
-            self.assertEqual(result, correct_output)
+    def test_generate_rhyming_lines(self):
+        result = generate_lines(
+            "Have you heard about the man from Peru?",
+            seed=self.seed,
+            generation_config=self.generation_config,
+            num_lines=3,
+            logits_processor=[self.rhyme_lp],
+            backward=True,
+        )
+        self.assertIsNotNone(result)
 
 
 if __name__ == "__main__":

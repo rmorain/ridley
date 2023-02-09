@@ -44,7 +44,7 @@ class BackwardsTextGenerationPipeline(TextGenerationPipeline):
                     )
 
                 if return_type == ReturnType.FULL_TEXT:
-                    all_text = text[:-prompt_length] + prompt_text
+                    all_text = text[:-prompt_length] + " " + prompt_text
                 else:
                     all_text = text[:-prompt_length]
 

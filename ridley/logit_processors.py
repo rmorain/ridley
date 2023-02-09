@@ -86,10 +86,8 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         self.call_counter += 1
         scores.squeeze_()
         if not self.rhyming_word_tokens:
-            forward_ids = [input_ids[0].tolist()[::-1]]
-            prior, rhyming_tokens = self.rhyming_prior(forward_ids, scores)
+            prior, rhyming_tokens = self.rhyming_prior(input_ids, scores)
             self.rhyming_word_tokens = self.select_rhyming_word(rhyming_tokens, scores)
-            self.rhyming_word_tokens = self.rhyming_word_tokens[::-1]
             self.rhyming_word_index = 0
         if self.rhyming_word_index < len(self.rhyming_word_tokens):
             new_scores = torch.full_like(scores, fill_value=float("-inf"))
@@ -111,12 +109,26 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         # Add space before word to correctly tokenize.
         rhyming_words = [" " + x["word"] for x in response.json()]
         if len(rhyming_words) > 0:
-            rhyming_tokens = [self.tokenizer.encode(word) for word in rhyming_words]
-            flat_list = [item for sublist in rhyming_tokens for item in sublist]
-            mask = torch.zeros(self.tokenizer.encoder.vocab_size)
+            rhyming_tokens = []
+            flat_list = []
+            for word in rhyming_words:
+                tokens = (
+                    self.tokenizer(word, return_tensors="pt")
+                    .input_ids.squeeze()
+                    .tolist()
+                )
+                if type(tokens) == int:
+                    rhyming_tokens.append([tokens])
+                    flat_list.append(tokens)
+                    continue
+                rhyming_tokens.append(tokens)
+                for item in tokens:
+                    flat_list.append(item)
+
+            mask = torch.zeros(self.tokenizer.vocab_size)
             # Set rhyming tokens to 1
             mask[torch.tensor(flat_list)] = 1
         # If nothing rhymes
         else:
-            mask = torch.ones(self.tokenizer.encoder.vocab_size)
+            mask = torch.ones(self.tokenizer.vocab_size)
         return mask, rhyming_tokens
