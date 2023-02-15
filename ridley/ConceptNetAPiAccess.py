@@ -51,8 +51,10 @@ def GetEdgesBetween(entity1, entity2):
 def GetCommonNeighbor(entity):
     edges = GetEdges(entity)["edges"]
     neighbors = {}
+    first_id = ""
     for i in edges:
         id = i["end"]["@id"]
+        first_id = id
         if id not in neighbors:
             neighbors[id] = 1
         else:
@@ -68,7 +70,7 @@ def GetCommonNeighbor(entity):
                 neighbors[id] += 1
 
     maxVal = 0
-    maxN = neighbors[id]
+    maxN = neighbors[first_id]
     for n in neighbors.keys():
         if neighbors[n] > maxVal:
             maxVal = neighbors[n]
@@ -76,7 +78,77 @@ def GetCommonNeighbor(entity):
 
     return maxN
 
+def GetAllCommonNeighbors(entity):
+    first = GetEdges(entity)
+    edges = first["edges"]
+    neighbors = {}
+    for i in edges:
+        id = i["end"]["@id"]
+        id2 = i["start"]["@id"]
+        split = id.split("/")
+        split2 = id2.split("/")
+        if id[:5] != '/c/en' or id == first["@id"]:
+            continue
+        else:
+            split = id.split("/")
+            if len(split) < 7:
+                ids = [split[3]]
+            else:
+                ids = [split[3], split[6]]
+            for u in ids:
+                if u not in neighbors:
+                    neighbors[u] = 1
+                else:
+                    neighbors[u] += 1
 
-resp = GetCommonNeighbor("dog")
+        if id2[:5] != '/c/en' or id2 == first["@id"]:
+            continue
+        else:
+            split = id2.split("/")
+            if len(split) < 7:
+                ids = [split[3]]
+            else:
+                ids = [split[3], split[6]]
+            for u in ids:
+                if u not in neighbors:
+                    neighbors[u] = 1
+                else:
+                    neighbors[u] += 1
+    keys = neighbors.copy()
+    for k in keys.keys():
+        commons = GetEdges(k)["edges"]
+        for c in commons:
+            id = c["end"]["@id"]
+            id2 = c["start"]["@id"]
+            if id[:5] != '/c/en' or id == first["@id"]:
+                break
+            else:
+                split = id.split("/")
+                if len(split) < 7:
+                    ids = [split[3]]
+                else:
+                    ids = [split[3], split[6]]
+                for u in ids:
+                    if u not in neighbors:
+                        neighbors[u] = 1
+                    else:
+                        neighbors[u] += 1
 
-print(resp)
+            if id2[:5] != '/c/en' or id2 == first["@id"]:
+                break
+            else:
+                split = id2.split("/")
+                if len(split) < 7:
+                    ids = [split[3]]
+                else:
+                    ids = [split[3], split[6]]
+                for u in ids:
+                    if u not in neighbors:
+                        neighbors[u] = 1
+                    else:
+                        neighbors[u] += 1
+
+    total = []
+    for k in neighbors.keys():
+        total.append(k.replace("_", " "))
+    return total
