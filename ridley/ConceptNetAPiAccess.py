@@ -14,11 +14,6 @@ def GetEntity(entity):
     return requests.get(full_uri).json()
 
 
-def GetEdgeWithID(entity):
-    full_edge_uri = base_uri + entity
-    return requests.get(full_edge_uri).json()
-
-
 def GetEdges(entity):
     response = GetEntity(entity)
     full_edge_uri = base_uri + response["@id"]
@@ -48,35 +43,78 @@ def GetEdgesBetween(entity1, entity2):
     return requests.get(full_uri).json()
 
 
-def GetCommonNeighbor(entity):
-    edges = GetEdges(entity)["edges"]
+def GetSecondDegreeNeighborsWithPath(entity):
+    first = GetEdges(entity)
+    edges = first["edges"]
     neighbors = {}
-    first_id = ""
     for i in edges:
         id = i["end"]["@id"]
-        first_id = id
-        if id not in neighbors:
-            neighbors[id] = 1
+        id2 = i["start"]["@id"]
+        if id[:5] != '/c/en' or id == first["@id"]:
+            continue
         else:
-            neighbors[id] += 1
+            split = id.split("/")
+            if len(split) < 7:
+                ids = [split[3]]
+            else:
+                ids = [split[3], split[6]]
+            for u in ids:
+                if u not in neighbors:
+                    neighbors[u] = 1
+                else:
+                    neighbors[u] += 1
+
+        if id2[:5] != '/c/en' or id2 == first["@id"]:
+            continue
+        else:
+            split = id2.split("/")
+            if len(split) < 7:
+                ids = [split[3]]
+            else:
+                ids = [split[3], split[6]]
+            for u in ids:
+                if u not in neighbors:
+                    neighbors[u] = 1
+                else:
+                    neighbors[u] += 1
     keys = neighbors.copy()
+    n_neighbors = {}
     for k in keys.keys():
-        commons = GetEdgeWithID(k)["edges"]
+        commons = GetEdges(k)["edges"]
         for c in commons:
             id = c["end"]["@id"]
-            if id not in neighbors:
-                neighbors[id] = 1
+            id2 = c["start"]["@id"]
+            if id[:5] != '/c/en' or id == first["@id"]:
+                break
             else:
-                neighbors[id] += 1
+                split = id.split("/")
+                if len(split) < 7:
+                    ids = [split[3]]
+                else:
+                    ids = [split[3], split[6]]
+                for u in ids:
+                    if u not in neighbors and u not in n_neighbors:
+                        n_neighbors[u] = [k]
+                    elif u not in neighbors:
+                        n_neighbors[u].append(k)
 
-    maxVal = 0
-    maxN = neighbors[first_id]
-    for n in neighbors.keys():
-        if neighbors[n] > maxVal:
-            maxVal = neighbors[n]
-            maxN = n
+            if id2[:5] != '/c/en' or id2 == first["@id"]:
+                break
+            else:
+                split = id2.split("/")
+                if len(split) < 7:
+                    ids = [split[3]]
+                else:
+                    ids = [split[3], split[6]]
+                for u in ids:
+                    if u not in neighbors and u not in n_neighbors:
+                        n_neighbors[u] = [k]
+                    elif u not in neighbors:
+                        n_neighbors[u].append(k)
 
-    return maxN
+
+
+    return sorted(n_neighbors.items(), key = lambda item : len(item[1]), reverse=True)
 
 def GetAllCommonNeighbors(entity):
     first = GetEdges(entity)
@@ -85,8 +123,6 @@ def GetAllCommonNeighbors(entity):
     for i in edges:
         id = i["end"]["@id"]
         id2 = i["start"]["@id"]
-        split = id.split("/")
-        split2 = id2.split("/")
         if id[:5] != '/c/en' or id == first["@id"]:
             continue
         else:
@@ -152,3 +188,5 @@ def GetAllCommonNeighbors(entity):
     for k in neighbors.keys():
         total.append(k.replace("_", " "))
     return total
+
+print(GetSecondDegreeNeighborsWithPath("dog"))
