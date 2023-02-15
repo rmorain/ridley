@@ -1,48 +1,93 @@
 from time import time
 
 import numpy as np
-import torch
-
-from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
+from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
+from GPT2ForwardBackward.padded_encoder import Encoder
+from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
-from ridley.ridley.document_embeddings import score_riddle
-from ridley.ridley.topical_prior_processors import TopicalPriorLogitsProcessor
+from ridley.document_embeddings import score_riddle
+from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
 def generate(
-    prompt="Hello world!",
-    num_return_sequences=5,
-    seed=None,
-    max_length=100,
-    constraints=None,
-    tokenizer=GPT2Tokenizer.from_pretrained("gpt2"),
-    do_sample=False,
+    inputs,
+    model=None,
+    tokenizer=None,
+    generation_config=GenerationConfig(pad_token_id=50256, eos_token_id=50256),
     logits_processor=[],
-    num_beams=5,
+    stopping_criteria=[],
+    prefix_allowed_tokens_fn=None,
+    synced_gpus=False,
+    seed=None,
+    backward=False,
+    return_full_text=True,
 ):
     if not seed:
         seed = np.random.randint(100000)
-    if constraints:
-        constraint_tokens = tokenizer(constraints).input_ids
-        constraints = [PhrasalConstraint(token_ids=t) for t in constraint_tokens]
-
-    generator = pipeline("text-generation", model="gpt2")
+    if model and tokenizer:
+        generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+    elif backward:
+        path_to_backward = "models/opengpt2_pytorch_backward"
+        model_backward = OpenGPT2LMHeadModel.from_pretrained(path_to_backward)
+        tokenizer = Encoder()
+        generator = BackwardsTextGenerationPipeline(
+            model=model_backward, tokenizer=tokenizer
+        )
+    else:
+        generator = pipeline("text-generation", model="gpt2")
     set_seed(seed)
 
     result = generator(
-        prompt,
-        max_new_tokens=max_length,
-        num_return_sequences=num_return_sequences,
-        num_beams=num_beams,
-        temperature=1,
-        do_sample=do_sample,
-        constraints=constraints,
-        repetition_penalty=10.1,
+        inputs,
+        generation_config=generation_config,
         logits_processor=logits_processor,
+        stopping_criteria=stopping_criteria,
+        prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
+        synced_gpus=synced_gpus,
+        return_full_text=return_full_text,
     )
     seqs = [r["generated_text"] for r in result]
     return seqs
+
+
+def generate_lines(
+    inputs,
+    num_lines=5,
+    model=None,
+    tokenizer=None,
+    generation_config=GenerationConfig(pad_token_id=50256, eos_token_id=50256),
+    logits_processor=[],
+    stopping_criteria=[],
+    prefix_allowed_tokens_fn=None,
+    synced_gpus=False,
+    seed=None,
+    backward=False,
+):
+    if not seed:
+        seed = np.random.randint(100000)
+    lines = inputs
+    for i in range(num_lines):
+        result = (
+            generate(
+                lines,
+                model=model,
+                tokenizer=tokenizer,
+                generation_config=generation_config,
+                logits_processor=logits_processor,
+                seed=seed,
+                return_full_text=False,
+                backward=backward,
+            )[0]
+            .strip()
+            .replace("\n", " ")
+        )
+        if backward:
+            lines = result + "\n" + lines
+        else:
+            lines = lines + "\n" + result
+
+    return lines
 
 
 def generate_until_done():
