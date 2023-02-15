@@ -1,12 +1,13 @@
-from pprint import pprint
 from time import time
 
 import numpy as np
-import pudb
+import torch
+
 from transformers import (GPT2Tokenizer, PhrasalConstraint, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
-from ridley.document_embeddings import score_riddle
+from ridley.ridley.document_embeddings import score_riddle
+from ridley.ridley.topical_prior_processors import TopicalPriorLogitsProcessor
 
 
 def generate(
@@ -17,6 +18,8 @@ def generate(
     constraints=None,
     tokenizer=GPT2Tokenizer.from_pretrained("gpt2"),
     do_sample=False,
+    logits_processor=[],
+    num_beams=5,
 ):
     if not seed:
         seed = np.random.randint(100000)
@@ -31,11 +34,12 @@ def generate(
         prompt,
         max_new_tokens=max_length,
         num_return_sequences=num_return_sequences,
-        num_beams=5,
-        temperature=0.9,
+        num_beams=num_beams,
+        temperature=1,
         do_sample=do_sample,
         constraints=constraints,
         repetition_penalty=10.1,
+        logits_processor=logits_processor,
     )
     seqs = [r["generated_text"] for r in result]
     return seqs
@@ -96,6 +100,24 @@ def generate_until_done():
     return bssf
 
 
+def generate_topical_lines(prompt, max_length=15, do_sample=True, topics=[], weight=2.5):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
+    generator = pipeline("text-generation", model="gpt2")
+    result = generator(
+        prompt,
+        max_length=max_length,
+        do_sample=do_sample,
+        logits_processor=[topic_lp]
+        )
+
+    return [r["generated_text"] for r in result][0]
+
+
 if __name__ == "__main__":
-    result = generate_until_done()
-    print(result)
+    #result = generate_until_done()
+    #print(result)
+
+
+    prompt = "What do you get"
+    print(generate_topical_lines(prompt, topics=["Harry Potter"], weight=3))
