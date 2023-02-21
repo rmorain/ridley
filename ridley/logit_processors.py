@@ -136,10 +136,10 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         return mask, rhyming_tokens
 
 
-class TopicalPriorLogitsProcessor(LogitsProcessor):
-    def __init__(self, tokenizer, max_length, topics, booster):
+class TopicalLogitsProcessor(LogitsProcessor):
+    def __init__(self, tokenizer, max_new_tokens, topics, booster):
         self.tokenizer = tokenizer
-        self.max_length = max_length
+        self.max_new_tokens = max_new_tokens
         self.booster = booster
         self.pre_retrieved = {}
         self.topics = topics
@@ -167,6 +167,7 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
     def request_topics(self, input_word):
         if input_word not in self.pre_retrieved:
             response = GetAllCommonNeighbors(input_word)
+            response = [" " + word for word in response]
 
             self.pre_retrieved[input_word] = response
         else:
