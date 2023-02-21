@@ -11,7 +11,7 @@ class TestTopicalLogitsProcessor(unittest.TestCase):
         self.tokenizer = Encoder()
         self.max_new_tokens = 10
         self.topics = ["Blood orange"]
-        self.booster = 30
+        self.booster = 10
         self.topical_lp = TopicalLogitsProcessor(
             self.tokenizer, self.max_new_tokens, self.topics, self.booster
         )
@@ -20,19 +20,20 @@ class TestTopicalLogitsProcessor(unittest.TestCase):
             eos_token_id=50256,
             bos_token_id=50256,
             do_sample=True,
-            seed=100,
         )
 
     def test_generate(self):
+        expected_result = [
+            " attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute attribute\n\n Hello world!"
+        ]
         result = generate(
             "Hello world!",
             generation_config=self.generation_config,
             logits_processor=[self.topical_lp],
             backward=True,
+            seed=100,
         )
-        print(result)
-        __import__("pudb").set_trace()
-        self.assertIsNotNone(result)
+        self.assertEqual(result, expected_result)
 
     def test_request_topics(self):
         expected_result = [

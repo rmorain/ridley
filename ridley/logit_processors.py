@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from transformers import LogitsProcessor
 
-from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors, GetCommonNeighbor
+from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors
 
 
 class RhymeLogitsProcessor(LogitsProcessor):
@@ -174,12 +174,3 @@ class TopicalLogitsProcessor(LogitsProcessor):
             response = self.pre_retrieved[input_word]
 
         return response
-
-    def request_topic(self, input_word):
-        if input_word not in self.pre_retrieved:
-            response = GetCommonNeighbor(input_word)
-            all = [response.split("/")[-1]]
-            self.pre_retrieved[input_word] = all
-        else:
-            all = self.pre_retrieved[input_word]
-        return all
