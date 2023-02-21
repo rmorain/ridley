@@ -46,11 +46,12 @@ def GetEdgesBetween(entity1, entity2):
 def GetSecondDegreeNeighborsWithPath(entity):
     first = GetEdges(entity)
     edges = first["edges"]
+    first_id = first["@id"]
     neighbors = {}
     for i in edges:
         id = i["end"]["@id"]
         id2 = i["start"]["@id"]
-        if id[:5] != '/c/en' or id == first["@id"]:
+        if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
             continue
         else:
             split = id.split("/")
@@ -64,7 +65,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
                 else:
                     neighbors[u] += 1
 
-        if id2[:5] != '/c/en' or id2 == first["@id"]:
+        if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
             continue
         else:
             split = id2.split("/")
@@ -84,7 +85,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
         for c in commons:
             id = c["end"]["@id"]
             id2 = c["start"]["@id"]
-            if id[:5] != '/c/en' or id == first["@id"]:
+            if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
                 break
             else:
                 split = id.split("/")
@@ -95,10 +96,10 @@ def GetSecondDegreeNeighborsWithPath(entity):
                 for u in ids:
                     if u not in neighbors and u not in n_neighbors:
                         n_neighbors[u] = [k]
-                    elif u not in neighbors:
+                    elif u not in neighbors and k not in n_neighbors[u]:
                         n_neighbors[u].append(k)
 
-            if id2[:5] != '/c/en' or id2 == first["@id"]:
+            if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
                 break
             else:
                 split = id2.split("/")
@@ -119,11 +120,12 @@ def GetSecondDegreeNeighborsWithPath(entity):
 def GetAllCommonNeighbors(entity):
     first = GetEdges(entity)
     edges = first["edges"]
+    first_id = first["@id"]
     neighbors = {}
     for i in edges:
         id = i["end"]["@id"]
         id2 = i["start"]["@id"]
-        if id[:5] != '/c/en' or id == first["@id"]:
+        if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
             continue
         else:
             split = id.split("/")
@@ -137,7 +139,7 @@ def GetAllCommonNeighbors(entity):
                 else:
                     neighbors[u] += 1
 
-        if id2[:5] != '/c/en' or id2 == first["@id"]:
+        if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
             continue
         else:
             split = id2.split("/")
@@ -156,7 +158,7 @@ def GetAllCommonNeighbors(entity):
         for c in commons:
             id = c["end"]["@id"]
             id2 = c["start"]["@id"]
-            if id[:5] != '/c/en' or id == first["@id"]:
+            if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
                 break
             else:
                 split = id.split("/")
@@ -170,7 +172,7 @@ def GetAllCommonNeighbors(entity):
                     else:
                         neighbors[u] += 1
 
-            if id2[:5] != '/c/en' or id2 == first["@id"]:
+            if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
                 break
             else:
                 split = id2.split("/")
@@ -188,5 +190,3 @@ def GetAllCommonNeighbors(entity):
     for k in neighbors.keys():
         total.append(k.replace("_", " "))
     return total
-
-print(GetSecondDegreeNeighborsWithPath("dog"))
