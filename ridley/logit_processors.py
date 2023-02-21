@@ -149,7 +149,7 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
         for w in self.topics:
             t = self.request_topics(w)
             for ind in t:
-                t_tokens = self.tokenizer(ind).input_ids
+                t_tokens = self.tokenizer(ind, return_tensors="pt").input_ids
                 for token in t_tokens:
                     scores[token] += self.booster
         """sentence = self.tokenizer.decode(input_ids[0])
