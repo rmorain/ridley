@@ -1,6 +1,6 @@
 from GPT2ForwardBackward.padded_encoder import Encoder
 from ridley.logit_processors import (BackwardsRhymeLogitsProcessor,
-                                     TopicalPriorLogitsProcessor)
+                                     TopicalLogitsProcessor)
 from ridley.riddle_generation import generate_lines
 from transformers import GenerationConfig
 
@@ -16,7 +16,7 @@ max_new_tokens = 10
 topics = ["Pudding"]
 booster = 3
 rhyme_lp = BackwardsRhymeLogitsProcessor(tokenizer, max_new_tokens, do_sample=True)
-topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_new_tokens, topics, booster)
+topic_lp = TopicalLogitsProcessor(tokenizer, max_new_tokens, topics, booster)
 logits_processor = [rhyme_lp, topic_lp]
 
 
