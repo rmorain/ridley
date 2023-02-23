@@ -71,7 +71,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
             word_scores.append(avg_word_score)
         if self.do_sample:
             word_scores = torch.Tensor(word_scores)
-            probabilities = F.softmax(word_scores)
+            probabilities = F.softmax(word_scores, dim=0)
             best_rhyming_word = rhyming_tokens[
                 torch.multinomial(probabilities, num_samples=1)
             ]
