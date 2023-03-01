@@ -1,6 +1,7 @@
 from time import time
 
 import numpy as np
+from ridley.logit_processors import TopicalPriorLogitsProcessor
 from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
 from GPT2ForwardBackward.padded_encoder import Encoder
 from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
@@ -145,7 +146,7 @@ def generate_until_done():
     return bssf
 
 
-def generate_topical_lines(prompt, max_length=15, do_sample=True, topics=[], weight=2.5):
+def generate_topical_lines(prompt, max_length=25, do_sample=True, topics=[], weight=2.5):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
     generator = pipeline("text-generation", model="gpt2")
@@ -164,5 +165,5 @@ if __name__ == "__main__":
     #print(result)
 
 
-    prompt = "What do you get"
+    prompt = "There once was"
     print(generate_topical_lines(prompt, topics=["Harry Potter"], weight=3))
