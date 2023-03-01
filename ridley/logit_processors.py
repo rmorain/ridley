@@ -7,6 +7,7 @@ from transformers import LogitsProcessor
 from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors, GetSecondDegreeNeighborsWithPath
 
 
+
 class RhymeLogitsProcessor(LogitsProcessor):
     def __init__(self, tokenizer, max_length, do_sample=False):
         self.tokenizer = tokenizer
@@ -136,11 +137,10 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         return mask, rhyming_tokens
 
 
-
 class TopicalPriorLogitsProcessor(LogitsProcessor):
     def __init__(self, tokenizer, max_length, topics, booster):
         self.tokenizer = tokenizer
-        self.max_length = max_length
+        self.max_new_tokens = max_new_tokens
         self.booster = booster
         self.pre_retrieved = {}
         self.topics = topics
@@ -151,7 +151,7 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
         for w in self.topics:
             t = self.request_topics(w)
             for ind in t:
-                t_tokens = self.tokenizer(ind).input_ids
+                t_tokens = self.tokenizer(ind, return_tensors="pt").input_ids
                 for token in t_tokens:
                     scores[token] += ((max_score - scores[token]) * 0.75)
 
@@ -160,6 +160,7 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
     def request_topics(self, input_word):
         if input_word not in self.pre_retrieved:
             response = GetAllCommonNeighbors(input_word)
+            response = [" " + word for word in response]
 
             self.pre_retrieved[input_word] = response
         else:
