@@ -1,14 +1,14 @@
 from time import time
 
 import numpy as np
-from ridley.ridley.topical_prior_processors import TopicalPriorLogitsProcessor
-from ridley.GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
-from ridley.GPT2ForwardBackward.padded_encoder import Encoder
+from ridley.logit_processors import TopicalPriorLogitsProcessor
+from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
+from GPT2ForwardBackward.padded_encoder import Encoder
 from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
-from ridley.ridley.document_embeddings import score_riddle
-from ridley.ridley.pipelines import BackwardsTextGenerationPipeline
+from ridley.document_embeddings import score_riddle
+from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
 def generate(

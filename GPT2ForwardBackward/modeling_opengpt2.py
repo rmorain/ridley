@@ -39,7 +39,7 @@ from transformers.utils import logging
 from transformers.utils.model_parallel_utils import (assert_device_map,
                                                      get_device_map)
 
-from ridley.GPT2ForwardBackward.configuration_opengpt2 import OpenGPT2Config
+from GPT2ForwardBackward.configuration_opengpt2 import OpenGPT2Config
 
 ## PETER: replaced these relative imports with imports from the package (above)
 """
