@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from transformers import LogitsProcessor
 
-from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors, GetCommonNeighbor
+from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors, GetSecondDegreeNeighborsWithPath
 
 
 class RhymeLogitsProcessor(LogitsProcessor):
@@ -136,6 +136,7 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         return mask, rhyming_tokens
 
 
+
 class TopicalPriorLogitsProcessor(LogitsProcessor):
     def __init__(self, tokenizer, max_length, topics, booster):
         self.tokenizer = tokenizer
@@ -146,21 +147,13 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
 
     def __call__(self, input_ids, scores):
         scores.squeeze_()
+        max_score = max(scores)
         for w in self.topics:
             t = self.request_topics(w)
             for ind in t:
                 t_tokens = self.tokenizer(ind).input_ids
                 for token in t_tokens:
-                    scores[token] += self.booster
-        """sentence = self.tokenizer.decode(input_ids[0])
-        words = sentence.strip().split(" ")
-        for w in words:
-            #print(w)
-            t = self.request_topics(w)
-            for ind in t:
-                t_tokens = self.tokenizer(ind).input_ids
-                for token in t_tokens:
-                    scores[token] += self.booster"""
+                    scores[token] += ((max_score - scores[token]) * 0.75)
 
         return scores.unsqueeze_(0)
 
@@ -176,9 +169,13 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
 
     def request_topic(self, input_word):
         if input_word not in self.pre_retrieved:
-            response = GetCommonNeighbor(input_word)
-            all = [response.split("/")[-1]]
+            response = GetSecondDegreeNeighborsWithPath(input_word)[0]
+            all = [response[0]]
             self.pre_retrieved[input_word] = all
         else:
             all = self.pre_retrieved[input_word]
         return all
+
+    def get_topic_context_scores(self, topics):
+        for topic in topics:
+            return topic
