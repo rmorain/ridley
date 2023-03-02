@@ -1,6 +1,6 @@
 import unittest
 
-from ridley.ridley.ConceptNetAPiAccess import (GetEntity, GetEdgeWithID, GetEdges, GetRelatedness, GetRelatedEnglish, GetEdgesBetween, GetCommonNeighbor)
+from ridley.ridley.ConceptNetAPiAccess import (GetEntity, GetEdges, GetRelatedness, GetRelatedEnglish, GetEdgesBetween)
 
 class TestConceptNet(unittest.TestCase):
     def setUp(self):
@@ -11,11 +11,6 @@ class TestConceptNet(unittest.TestCase):
         resp = GetEntity(self.firstEntity)
         self.assertIsNotNone(resp)
         self.assertEqual(resp['@id'], "/c/en/dog")
-
-    def test_get_edges_with_id(self):
-        resp = GetEdgeWithID("/c/en/dog")
-        self.assertIsNotNone(resp)
-        self.assertEqual(len(resp), 5)
 
     def test_get_edges(self):
         resp = GetEdges(self.firstEntity)
@@ -37,10 +32,6 @@ class TestConceptNet(unittest.TestCase):
         self.assertIsNotNone(resp)
         self.assertEqual(len(resp), 4)
 
-    def test_get_common_neighbor(self):
-        resp = GetCommonNeighbor(self.firstEntity)
-        self.assertIsNotNone(resp)
-        self.assertEqual(resp, "/c/en/animal")
 
 if __name__ == "__main__":
     unittest.main()

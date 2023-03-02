@@ -7,6 +7,7 @@ from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
+from ridley.logit_processors import TopicalPriorLogitsProcessor
 from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
@@ -146,7 +147,7 @@ def generate_until_done():
 
 
 def generate_topical_lines(
-    prompt, max_length=15, do_sample=True, topics=[], weight=2.5
+    prompt, max_length=25, do_sample=True, topics=[], weight=2.5
 ):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
@@ -162,5 +163,5 @@ if __name__ == "__main__":
     # result = generate_until_done()
     # print(result)
 
-    prompt = "What do you get"
+    prompt = "There once was"
     print(generate_topical_lines(prompt, topics=["Harry Potter"], weight=3))
