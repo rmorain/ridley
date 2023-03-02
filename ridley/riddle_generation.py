@@ -145,24 +145,22 @@ def generate_until_done():
     return bssf
 
 
-def generate_topical_lines(prompt, max_length=15, do_sample=True, topics=[], weight=2.5):
+def generate_topical_lines(
+    prompt, max_length=15, do_sample=True, topics=[], weight=2.5
+):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
     generator = pipeline("text-generation", model="gpt2")
     result = generator(
-        prompt,
-        max_length=max_length,
-        do_sample=do_sample,
-        logits_processor=[topic_lp]
-        )
+        prompt, max_length=max_length, do_sample=do_sample, logits_processor=[topic_lp]
+    )
 
     return [r["generated_text"] for r in result][0]
 
 
 if __name__ == "__main__":
-    #result = generate_until_done()
-    #print(result)
-
+    # result = generate_until_done()
+    # print(result)
 
     prompt = "What do you get"
     print(generate_topical_lines(prompt, topics=["Harry Potter"], weight=3))

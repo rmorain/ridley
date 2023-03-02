@@ -1,7 +1,8 @@
 import unittest
 
 from GPT2ForwardBackward.padded_encoder import Encoder
-from ridley.logit_processors import BackwardsRhymeLogitsProcessor
+from ridley.logit_processors import (BackwardsRhymeLogitsProcessor,
+                                     TopicalLogitsProcessor)
 from ridley.riddle_generation import generate, generate_lines
 from transformers import GenerationConfig
 
@@ -20,6 +21,9 @@ class TestRiddleGeneration(unittest.TestCase):
         )
         self.rhyme_lp = BackwardsRhymeLogitsProcessor(
             Encoder(), self.generation_config.max_new_tokens, do_sample=True
+        )
+        self.topical_lp = TopicalLogitsProcessor(
+            Encoder(), self.generation_config.max_new_tokens, ["blood moon"], 3
         )
 
     def test_generate(self):
@@ -64,6 +68,35 @@ class TestRiddleGeneration(unittest.TestCase):
             generation_config=self.generation_config,
             num_lines=3,
             logits_processor=[self.rhyme_lp],
+            backward=True,
+        )
+        self.assertIsNotNone(result)
+
+    def test_generate_topical_lines(self):
+        expected_result = """
+        eclipse total eclipse total eclipse total eclipse lunar eclipse total eclipse 
+        lunar eclipse total lunar eclipse total eclipse\neclipse total eclipse total 
+        eclipse total eclipse lunar eclipse total eclipse lunar eclipse total  
+lunar eclipse total eclipse\neclipse total eclipse total eclipse total eclipse lunar
+eclipse total eclipse lunar eclipse total lunar eclipse total eclipse\nWhat am I? A
+blood moon."""
+        result = generate_lines(
+            "What am I? A blood moon.",
+            seed=self.seed,
+            generation_config=self.generation_config,
+            num_lines=3,
+            logits_processor=[self.topical_lp],
+            backward=True,
+        )
+        self.assertIsNotNone(result)
+
+    def test_generate_topical_rhyming_lines(self):
+        result = generate_lines(
+            "What am I? A blood moon.",
+            seed=self.seed,
+            generation_config=self.generation_config,
+            num_lines=3,
+            logits_processor=[self.topical_lp, self.rhyme_lp],
             backward=True,
         )
         self.assertIsNotNone(result)

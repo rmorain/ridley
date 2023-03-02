@@ -1,3 +1,5 @@
+import string
+
 import numpy as np
 import requests
 import torch
@@ -52,9 +54,16 @@ class RhymeLogitsProcessor(LogitsProcessor):
         # Get rhyming word
         response = self.request_rhymes(word)
         # Add space before word to correctly tokenize.
-        rhyming_words = [" " + x["word"] for x in response.json()]
+        rhyming_words = []
+        for x in response.json():
+            # Require perfect rhymes
+            if x["score"] >= 300:
+                rhyming_words.append(x["word"])
+
         if len(rhyming_words) > 0:
-            rhyming_tokens = self.tokenizer(rhyming_words).input_ids
+            rhyming_tokens = self.tokenizer(
+                rhyming_words, add_prefix_space=True
+            ).input_ids
             flat_list = [item for sublist in rhyming_tokens for item in sublist]
             mask = torch.zeros(self.tokenizer.vocab_size)
             # Set rhyming tokens to 1
@@ -106,16 +115,22 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         # Decode input_ids
         text = self.tokenizer.decode(input_ids[0])
         word = text.split()[-1]
+        # Remove punctuation
+        word = word.translate(str.maketrans("", "", string.punctuation))
         # Get rhyming word
         response = self.request_rhymes(word)
         # Add space before word to correctly tokenize.
-        rhyming_words = [" " + x["word"] for x in response.json()]
+        rhyming_words = []
+        for x in response.json():
+            # Require perfect rhymes
+            if x["score"] >= 200:
+                rhyming_words.append(x["word"])
         if len(rhyming_words) > 0:
             rhyming_tokens = []
             flat_list = []
             for word in rhyming_words:
                 tokens = (
-                    self.tokenizer(word, return_tensors="pt")
+                    self.tokenizer(word, add_prefix_space=True, return_tensors="pt")
                     .input_ids.squeeze()
                     .tolist()
                 )
