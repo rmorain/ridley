@@ -1,13 +1,13 @@
 from time import time
 
 import numpy as np
-from ridley.logit_processors import TopicalPriorLogitsProcessor
 from GPT2ForwardBackward.modeling_opengpt2 import OpenGPT2LMHeadModel
 from GPT2ForwardBackward.padded_encoder import Encoder
 from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
+from ridley.logit_processors import TopicalLogitsProcessor
 from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
@@ -38,7 +38,6 @@ def generate(
     else:
         generator = pipeline("text-generation", model="gpt2")
     set_seed(seed)
-
     result = generator(
         inputs,
         generation_config=generation_config,
@@ -146,24 +145,22 @@ def generate_until_done():
     return bssf
 
 
-def generate_topical_lines(prompt, max_length=25, do_sample=True, topics=[], weight=2.5):
+def generate_topical_lines(
+    prompt, max_length=25, do_sample=True, topics=[], weight=2.5
+):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
+    topic_lp = TopicalLogitsProcessor(tokenizer, max_length, topics, weight)
     generator = pipeline("text-generation", model="gpt2")
     result = generator(
-        prompt,
-        max_length=max_length,
-        do_sample=do_sample,
-        logits_processor=[topic_lp]
-        )
+        prompt, max_length=max_length, do_sample=do_sample, logits_processor=[topic_lp]
+    )
 
     return [r["generated_text"] for r in result][0]
 
 
 if __name__ == "__main__":
-    #result = generate_until_done()
-    #print(result)
-
+    # result = generate_until_done()
+    # print(result)
 
     prompt = "There once was"
     print(generate_topical_lines(prompt, topics=["Harry Potter"], weight=3))

@@ -41,7 +41,6 @@ class TestRhymeLogitsProcessor(unittest.TestCase):
         self.assertIsInstance(result, requests.models.Response)
 
     def test_rhyming_prior(self):
-        input_ids = self.tokenizer("Hello world", return_tensors="pt").input_ids
         scores = torch.rand(self.tokenizer.vocab_size)
         result, _ = self.rhyme_lp.rhyming_prior(input_ids, scores)
         self.assertIsNotNone(result)
