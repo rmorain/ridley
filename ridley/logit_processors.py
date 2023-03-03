@@ -6,8 +6,8 @@ import torch
 import torch.nn.functional as F
 from transformers import LogitsProcessor
 
-from ridley.ConceptNetAPiAccess import GetAllCommonNeighbors, GetSecondDegreeNeighborsWithPath
-
+from ridley.ConceptNetAPiAccess import (GetAllCommonNeighbors,
+                                        GetSecondDegreeNeighborsWithPath)
 
 
 class RhymeLogitsProcessor(LogitsProcessor):
@@ -43,9 +43,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
         return new_scores.unsqueeze_(0)
 
     def request_rhymes(self, word):
-        response = requests.get(
-            f"https://rhymebrain.com/talk?function=getRhymes&word={word}"
-        )
+        response = requests.get(f"https://api.datamuse.com/words?rel_rhy={word}")
         return response
 
     def rhyming_prior(self, input_ids, scores):
@@ -54,12 +52,7 @@ class RhymeLogitsProcessor(LogitsProcessor):
         word = text.split()[-1]
         # Get rhyming word
         response = self.request_rhymes(word)
-        # Add space before word to correctly tokenize.
-        rhyming_words = []
-        for x in response.json():
-            # Require perfect rhymes
-            if x["score"] >= 300:
-                rhyming_words.append(x["word"])
+        rhyming_words = [x["word"] for x in response.json()]
 
         if len(rhyming_words) > 0:
             rhyming_tokens = self.tokenizer(
@@ -108,24 +101,25 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
             return new_scores.unsqueeze_(0)
         if self.call_counter >= self.max_length:
             # Reinitialize for next line
-            super().__init__(self.tokenizer, self.max_length)
+            self.rhyming_word_tokens = None
+            self.rhyming_word_index = -1
+            self.rhyming_scores = None
+            self.sequence_length = -1
+            self.prompt_len = None
+            self.call_counter = 0
 
         return scores.unsqueeze_(0)
 
     def rhyming_prior(self, input_ids, scores):
         # Decode input_ids
         text = self.tokenizer.decode(input_ids[0])
-        word = text.split()[-1]
+        word = text.splitlines()[0].split()[-1]
         # Remove punctuation
         word = word.translate(str.maketrans("", "", string.punctuation))
         # Get rhyming word
         response = self.request_rhymes(word)
         # Add space before word to correctly tokenize.
-        rhyming_words = []
-        for x in response.json():
-            # Require perfect rhymes
-            if x["score"] >= 200:
-                rhyming_words.append(x["word"])
+        rhyming_words = [x["word"] for x in response.json()]
         if len(rhyming_words) > 0:
             rhyming_tokens = []
             flat_list = []
@@ -152,8 +146,8 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         return mask, rhyming_tokens
 
 
-class TopicalPriorLogitsProcessor(LogitsProcessor):
-    def __init__(self, tokenizer, max_length, topics, booster):
+class TopicalLogitsProcessor(LogitsProcessor):
+    def __init__(self, tokenizer, max_new_tokens, topics, booster):
         self.tokenizer = tokenizer
         self.max_new_tokens = max_new_tokens
         self.booster = booster
@@ -168,7 +162,7 @@ class TopicalPriorLogitsProcessor(LogitsProcessor):
             for ind in t:
                 t_tokens = self.tokenizer(ind, return_tensors="pt").input_ids
                 for token in t_tokens:
-                    scores[token] += ((max_score - scores[token]) * 0.75)
+                    scores[token] += (max_score - scores[token]) * 0.75
 
         return scores.unsqueeze_(0)
 

@@ -36,7 +36,7 @@ topics = ["Pudding"]
 booster = 2
 rhyme_lp = BackwardsRhymeLogitsProcessor(tokenizer, max_new_tokens, do_sample=True)
 topic_lp = TopicalLogitsProcessor(tokenizer, max_new_tokens, topics, booster)
-logits_processor = [rhyme_lp, topic_lp]
+logits_processor = [topic_lp, rhyme_lp]
 
 result = generate_lines(
     input_text,

@@ -7,7 +7,7 @@ from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
-from ridley.logit_processors import TopicalPriorLogitsProcessor
+from ridley.logit_processors import TopicalLogitsProcessor
 from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
@@ -38,7 +38,6 @@ def generate(
     else:
         generator = pipeline("text-generation", model="gpt2")
     set_seed(seed)
-
     result = generator(
         inputs,
         generation_config=generation_config,
@@ -150,7 +149,7 @@ def generate_topical_lines(
     prompt, max_length=25, do_sample=True, topics=[], weight=2.5
 ):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    topic_lp = TopicalPriorLogitsProcessor(tokenizer, max_length, topics, weight)
+    topic_lp = TopicalLogitsProcessor(tokenizer, max_length, topics, weight)
     generator = pipeline("text-generation", model="gpt2")
     result = generator(
         prompt, max_length=max_length, do_sample=do_sample, logits_processor=[topic_lp]
