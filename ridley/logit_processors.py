@@ -68,13 +68,14 @@ class RhymeLogitsProcessor(LogitsProcessor):
         return mask, rhyming_tokens
 
     def select_rhyming_word(self, rhyming_tokens, scores):
+        __import__("pudb").set_trace()
         word_scores = []
         for word in rhyming_tokens:
-            avg_word_score = scores[word].mean().item()
+            avg_word_score = scores[:, word].mean(-1)
             word_scores.append(avg_word_score)
         if self.do_sample:
             word_scores = torch.Tensor(word_scores)
-            probabilities = F.softmax(word_scores, dim=0)
+            probabilities = F.softmax(word_scores, dim=-1)
             best_rhyming_word = rhyming_tokens[
                 torch.multinomial(probabilities, num_samples=1)
             ]
@@ -92,9 +93,14 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         scores.squeeze_()
         if not self.rhyming_word_tokens:
             prior, rhyming_tokens = self.rhyming_prior(input_ids, scores)
-            self.rhyming_word_tokens = self.select_rhyming_word(rhyming_tokens, scores)
-            self.rhyming_word_index = 0
-        if self.rhyming_word_index < len(self.rhyming_word_tokens):
+            if rhyming_tokens:
+                self.rhyming_word_tokens = self.select_rhyming_word(
+                    rhyming_tokens, scores
+                )
+                self.rhyming_word_index = 0
+        if self.rhyming_word_tokens and self.rhyming_word_index < len(
+            self.rhyming_word_tokens
+        ):
             new_scores = torch.full_like(scores, fill_value=float("-inf"))
             new_scores[self.rhyming_word_tokens[self.rhyming_word_index]] = 1
             self.rhyming_word_index += 1
@@ -113,7 +119,10 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
     def rhyming_prior(self, input_ids, scores):
         # Decode input_ids
         text = self.tokenizer.decode(input_ids[0])
-        word = text.splitlines()[0].split()[-1]
+        try:
+            word = text.strip().splitlines()[0].split()[-1]
+        except IndexError:
+            __import__("pudb").set_trace()
         # Remove punctuation
         word = word.translate(str.maketrans("", "", string.punctuation))
         # Get rhyming word
@@ -143,6 +152,7 @@ class BackwardsRhymeLogitsProcessor(RhymeLogitsProcessor):
         # If nothing rhymes
         else:
             mask = torch.ones(self.tokenizer.vocab_size)
+            rhyming_tokens = None
         return mask, rhyming_tokens
 
 
@@ -156,13 +166,15 @@ class TopicalLogitsProcessor(LogitsProcessor):
 
     def __call__(self, input_ids, scores):
         scores.squeeze_()
-        max_score = max(scores)
+        max_score = torch.max(scores, dim=-1).values
         for w in self.topics:
             t = self.request_topics(w)
             for ind in t:
                 t_tokens = self.tokenizer(ind, return_tensors="pt").input_ids
-                for token in t_tokens:
-                    scores[token] += (max_score - scores[token]) * 0.75
+                for token in t_tokens[0]:
+                    boost = (max_score - scores[:, token]) * 0.75
+                    if torch.isfinite(boost).any():
+                        scores[:, token] += boost
 
         return scores.unsqueeze_(0)
 

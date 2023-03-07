@@ -51,7 +51,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
     for i in edges:
         id = i["end"]["@id"]
         id2 = i["start"]["@id"]
-        if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
+        if id[:5] != "/c/en" or id[: len(first_id)] == first_id:
             continue
         else:
             split = id.split("/")
@@ -65,7 +65,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
                 else:
                     neighbors[u] += 1
 
-        if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
+        if id2[:5] != "/c/en" or id2[: len(first_id)] == first_id:
             continue
         else:
             split = id2.split("/")
@@ -85,7 +85,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
         for c in commons:
             id = c["end"]["@id"]
             id2 = c["start"]["@id"]
-            if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
+            if id[:5] != "/c/en" or id[: len(first_id)] == first_id:
                 break
             else:
                 split = id.split("/")
@@ -99,7 +99,7 @@ def GetSecondDegreeNeighborsWithPath(entity):
                     elif u not in neighbors and k not in n_neighbors[u]:
                         n_neighbors[u].append(k)
 
-            if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
+            if id2[:5] != "/c/en" or id2[: len(first_id)] == first_id:
                 break
             else:
                 split = id2.split("/")
@@ -113,9 +113,8 @@ def GetSecondDegreeNeighborsWithPath(entity):
                     elif u not in neighbors:
                         n_neighbors[u].append(k)
 
+    return sorted(n_neighbors.items(), key=lambda item: len(item[1]), reverse=True)
 
-
-    return sorted(n_neighbors.items(), key = lambda item : len(item[1]), reverse=True)
 
 def GetAllCommonNeighbors(entity):
     first = GetEdges(entity)
@@ -125,7 +124,7 @@ def GetAllCommonNeighbors(entity):
     for i in edges:
         id = i["end"]["@id"]
         id2 = i["start"]["@id"]
-        if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
+        if id[:5] != "/c/en" or id[: len(first_id)] == first_id:
             continue
         else:
             split = id.split("/")
@@ -139,7 +138,7 @@ def GetAllCommonNeighbors(entity):
                 else:
                     neighbors[u] += 1
 
-        if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
+        if id2[:5] != "/c/en" or id2[: len(first_id)] == first_id:
             continue
         else:
             split = id2.split("/")
@@ -158,7 +157,7 @@ def GetAllCommonNeighbors(entity):
         for c in commons:
             id = c["end"]["@id"]
             id2 = c["start"]["@id"]
-            if id[:5] != '/c/en' or id[:len(first_id)] == first_id:
+            if id[:5] != "/c/en" or id[: len(first_id)] == first_id:
                 break
             else:
                 split = id.split("/")
@@ -172,7 +171,7 @@ def GetAllCommonNeighbors(entity):
                     else:
                         neighbors[u] += 1
 
-            if id2[:5] != '/c/en' or id2[:len(first_id)] == first_id:
+            if id2[:5] != "/c/en" or id2[: len(first_id)] == first_id:
                 break
             else:
                 split = id2.split("/")

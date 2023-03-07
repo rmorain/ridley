@@ -7,7 +7,9 @@ from transformers import (GenerationConfig, GPT2Tokenizer, RealmScorer,
                           RealmTokenizer, pipeline, set_seed)
 
 from ridley.document_embeddings import score_riddle
-from ridley.logit_processors import TopicalLogitsProcessor
+from ridley.logit_processors import (BackwardsRhymeLogitsProcessor,
+                                     RhymeLogitsProcessor,
+                                     TopicalLogitsProcessor)
 from ridley.pipelines import BackwardsTextGenerationPipeline
 
 
@@ -68,13 +70,14 @@ def generate_lines(
         seed = np.random.randint(100000)
     lines = inputs
     for i in range(num_lines):
+        current_logits_processor = do_not_rhyme_with_prompt(logits_processor, i)
         result = (
             generate(
                 lines,
                 model=model,
                 tokenizer=tokenizer,
                 generation_config=generation_config,
-                logits_processor=logits_processor,
+                logits_processor=current_logits_processor,
                 seed=seed,
                 return_full_text=False,
                 backward=backward,
@@ -88,6 +91,20 @@ def generate_lines(
             lines = lines + "\n" + result
 
     return lines
+
+
+def do_not_rhyme_with_prompt(logits_processor, line_number):
+    current_logits_processor = []
+    if line_number == 0:
+        for lp in logits_processor:
+            if (
+                type(lp) is not BackwardsRhymeLogitsProcessor
+                and type(lp) is not RhymeLogitsProcessor
+            ):
+                current_logits_processor.append(lp)
+    else:
+        return logits_processor
+    return current_logits_processor
 
 
 def generate_until_done():
